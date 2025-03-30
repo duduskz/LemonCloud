@@ -109,8 +109,8 @@ function FilePage() {
   };
 
   const handleShareConfirm = async () => {
+    const file = contextMenu?.selectedFile;
     try {
-      const file = contextMenu?.selectedFile;
       const response = await fetch('http://127.0.0.1:11810/file/share', {
         method: 'POST',
         headers: {
@@ -129,6 +129,9 @@ function FilePage() {
       setShareLink(`http://127.0.0.1:11810/file/shareDownloader?uuid=${data.uuid}`);
       setShareDialogOpen(false);
       
+
+      setContextMenu(null);
+
       setUploadStatus({
         open: false,
         message: '分享链接已生成',
@@ -141,7 +144,7 @@ function FilePage() {
     } catch (error) {
       setUploadStatus({
         open: true,
-        message: '分享失败',
+        message: '分享失败' + error,
         severity: 'error'
       });
     }
@@ -565,7 +568,6 @@ function FilePage() {
         </MenuItem>
         <MenuItem onClick={() => {
           setShareDialogOpen(true);
-          setContextMenu(null);
         }}>
           <Share sx={{ mr: 1 }} /> 分享
         </MenuItem>
