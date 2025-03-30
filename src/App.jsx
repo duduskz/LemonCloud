@@ -26,14 +26,15 @@ import {
   Menu,
   MenuItem,
   CircularProgress,
-  
+  RadioGroup,
   Button,
+  Radio,
   Dialog,
+  FormControlLabel,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  InputAdornment
+  TextField
   
 } from "@mui/material";
 
@@ -42,6 +43,7 @@ import {
   InsertDriveFile,
   CreateNewFolder,
   Folder,
+  ContentCopy,
   GitHub,
   Storage,
   Refresh,
@@ -64,6 +66,10 @@ const cookies = Object.fromEntries(
 // 文件页面组件
 function FilePage() {
 
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareResultDialogOpen, setShareResultDialogOpen] = useState(false);
+  const [expireOption, setExpireOption] = useState(0);
+  const [shareLink, setShareLink] = useState('');
   const [uploadProgress, setUploadProgress] = useState(-1);
   const [uploadStatus, setUploadStatus] = useState({ open: false, message: '', severity: 'success' });
   const [newFolderOpen, setNewFolderOpen] = useState(false);
@@ -78,6 +84,7 @@ function FilePage() {
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
   
   
   const fetchFiles = async () => {
@@ -101,6 +108,47 @@ function FilePage() {
     }
   };
 
+  const handleShareConfirm = async () => {
+    try {
+      const file = contextMenu?.selectedFile;
+      const response = await fetch('http://127.0.0.1:11810/file/share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: currentPath.slice(1).join('/') + "/",
+          file: file.name,
+          expireType: expireOption,
+          isDirectory: file.type === 'dir',
+          token: cookies.loginToken
+        })
+      });
+  
+      const data = await response.json();
+      setShareLink(`http://127.0.0.1:11810/file/shareDownloader?uuid=${data.uuid}`);
+      setShareDialogOpen(false);
+      
+      setUploadStatus({
+        open: false,
+        message: '分享链接已生成',
+        severity: 'success',
+        link: data.uuid
+      });
+
+      setShareResultDialogOpen(true);
+  
+    } catch (error) {
+      setUploadStatus({
+        open: true,
+        message: '分享失败',
+        severity: 'error'
+      });
+    }
+  };
+  
+  
+
   const handleDownload = async (fileName) => {
     try {
       const relativePath = currentPath.slice(1).join('/');
@@ -111,6 +159,8 @@ function FilePage() {
       iframe.src = downloadUrl;
       document.body.appendChild(iframe);
       
+      setContextMenu(null);
+
       setTimeout(() => {
         document.body.removeChild(iframe);
       }, 5000);
@@ -134,6 +184,7 @@ function FilePage() {
   });
 
 
+  
 
   useEffect(() => {
     fetchFiles();
@@ -265,13 +316,6 @@ function FilePage() {
       setError(err.message);
     }
   };
-
-  const handleFileAction = (action) => {
-    console.log(`${action} ${contextMenu.selectedFile.name}`);
-    setContextMenu(null);
-  };
-
-
   const handleBreadcrumbClick = (index) => {
     setCurrentPath(currentPath.slice(0, index + 1));
   };
@@ -282,7 +326,56 @@ function FilePage() {
   };
 
   return (
+
+    
     <Container maxWidth="xl" sx={{ py: 4 }}>
+<Snackbar
+    open={shareResultDialogOpen}
+    autoHideDuration={6000}
+    onClose={() => setUploadStatus({...uploadStatus, open: false})}
+  >
+    <Alert severity={uploadStatus.severity}>
+      <Box>
+        <Typography>{uploadStatus.message}</Typography>
+        {uploadStatus.link && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+            <TextField
+              value={`${window.location.origin}/file/shareDownloader?uuid=${uploadStatus.link}`}
+              size="small"
+              fullWidth
+              InputProps={{ readOnly: true }}
+            />
+            <IconButton onClick={() => navigator.clipboard.writeText(shareLink)}>
+              <ContentCopy fontSize="small" />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
+    </Alert>
+  </Snackbar>
+
+<Dialog open={shareDialogOpen} onClose={() => setShareDialogOpen(false)}>
+      <DialogTitle>分享文件</DialogTitle>
+      <DialogContent>
+        <RadioGroup
+          value={expireOption}
+          onChange={(e) => setExpireOption(Number(e.target.value))}
+        >
+          <FormControlLabel value={0} control={<Radio />} label="1天" />
+          <FormControlLabel value={1} control={<Radio />} label="7天" />
+          <FormControlLabel value={2} control={<Radio />} label="1个月" />
+          <FormControlLabel value={3} control={<Radio />} label="永久" />
+        </RadioGroup>
+        <Typography variant="caption" color="textSecondary">
+          当你分享文件后，任何人都可查看和下载你的文件
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setShareDialogOpen(false)}>取消</Button>
+        <Button onClick={handleShareConfirm} color="primary">确认</Button>
+      </DialogActions>
+    </Dialog>
+
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
       <Breadcrumbs aria-label="路径导航" sx={{ mb: 3 }}>
         {currentPath.map((path, index) => (
@@ -379,6 +472,8 @@ function FilePage() {
   )}
 </Box>
 
+
+
 <Snackbar
   open={uploadStatus.open}
   autoHideDuration={3000}
@@ -435,10 +530,10 @@ function FilePage() {
               >
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {file.type === 'dir' ? <Folder color="primary" /> : <InsertDriveFile />}
-                  {file.name}
-  </Box>
-</TableCell>
+                    {file.type === 'dir' ? <Folder color="primary" /> : <InsertDriveFile />}
+                    {file.name}
+                  </Box>
+                </TableCell>
                 <TableCell>{file.type === 'dir' ? '文件夹' : '文件'}</TableCell>
                 <TableCell>
                   {new Date(file.modified).toLocaleString()}
@@ -468,7 +563,10 @@ function FilePage() {
         <MenuItem onClick={handleDelete}>
           <Delete sx={{ mr: 1 }} /> 删除
         </MenuItem>
-        <MenuItem onClick={() => handleFileAction('share')}>
+        <MenuItem onClick={() => {
+          setShareDialogOpen(true);
+          setContextMenu(null);
+        }}>
           <Share sx={{ mr: 1 }} /> 分享
         </MenuItem>
       </Menu>
@@ -479,8 +577,10 @@ function FilePage() {
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [storageInfo, setStorageInfo] = useState('加载中...');
+  const [recentFiles, setRecentFiles] = useState([]);
 
   const fetchStorageInfo = async () => {
     try {
@@ -501,6 +601,67 @@ function App() {
     }
   };
 
+  const handleDownload = async (fullPath) => {
+    try {
+      const cookies = Object.fromEntries(document.cookie.split("; ").map((c) => c.split("=")));
+      const [path, file] = fullPath.split('/').reduce((acc, cur, index, arr) => {
+        if (index === arr.length - 1) acc[1] = cur;
+        else acc[0] = acc[0] ? `${acc[0]}/${cur}` : cur;
+        return acc;
+      }, ['', '']);
+  
+      const downloadUrl = `http://127.0.0.1:11810/file/download?path=${encodeURIComponent(path)}&file=${encodeURIComponent(file)}&token=${cookies.loginToken}`;
+  
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = downloadUrl;
+      document.body.appendChild(iframe);
+      
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 5000);
+    } catch (err) {
+      console.error('下载失败:', err);
+    }
+  };
+
+const fetchRecentFiles = async () => {
+  try {
+    const cookies = Object.fromEntries(document.cookie.split("; ").map((c) => c.split("=")));
+    const getAllFiles = async (path = "") => {
+      const response = await fetch(
+        `http://127.0.0.1:11810/file/list?path=${encodeURIComponent(path)}&token=${cookies.loginToken}`
+      );
+      if (!response.ok) return [];
+      
+      const data = await response.json();
+      const files = [];
+      
+      for (const item of data.files) {
+        if (item.type === 'dir') {
+          const subFiles = await getAllFiles(path ? `${path}/${item.name}` : item.name);
+          files.push(...subFiles);
+        } else {
+          files.push({ 
+            ...item,
+            fullPath: path ? `${path}/${item.name}` : item.name
+          });
+        }
+      }
+      return files;
+    };
+
+    const allFiles = await getAllFiles();
+    const sortedFiles = allFiles.sort(
+      (a, b) => new Date(b.modified) - new Date(a.modified)
+    );
+    setRecentFiles(sortedFiles.slice(0, 3));
+  } catch (err) {
+    console.error('获取最近文件出错:', err);
+    setRecentFiles([]);
+  }
+};
+
   useEffect(() => {
     
     if (!cookies.loginToken) {
@@ -508,6 +669,7 @@ function App() {
     } else {
       setIsAuthenticated(true);
       fetchStorageInfo();
+      fetchRecentFiles();
     }
 
   }, [navigate]);
@@ -553,7 +715,7 @@ function App() {
                 文件
               </Button>
               
-              <Avatar sx={{ bgcolor: '#2196f3', cursor: 'pointer', '&:hover': { transform: 'scale(1.1)' }}}>U</Avatar>
+              <Avatar sx={{ bgcolor: '#2196f3', cursor: 'pointer', '&:hover': { transform: 'scale(1.1)' }}}></Avatar>
             </Box>
           </Toolbar>
         </Container>
@@ -561,20 +723,7 @@ function App() {
 
       {location.pathname === "/" ? (
         <Container maxWidth="xl" sx={{ py: 4 }}>
-          <TextField
-            fullWidth
-            placeholder="搜索文件..."
-            variant="outlined"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-              style: { borderRadius: 40, backgroundColor: '#fff' }
-            }}
-            sx={{ mb: 4 }}
-          />
+          
 
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12} md={4}>
@@ -654,29 +803,30 @@ function App() {
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>最近的文件</Typography>
               <List>
-                {[
-                  { name: 'document.pdf', date: '2023-08-20' },
-                  { name: 'image.jpg', date: '2023-08-19' },
-                  { name: 'presentation.pptx', date: '2023-08-18' }
-                ].map((file, index) => (
-                  <ListItem
-                    key={index}
-                    sx={{
-                      '&:hover': { backgroundColor: '#f5f5f5' },
-                      borderRadius: 2
-                    }}
-                  >
-                    <InsertDriveFile sx={{ color: '#757575', mr: 2 }} />
-                    <ListItemText
-                      primary={file.name}
-                      secondary={`最后修改: ${file.date}`}
-                    />
-                    <IconButton onClick={() => window.location.href = `/files/${file.name}`}>
-                      <Download />
-                    </IconButton>
-                  </ListItem>
-                ))}
-              </List>
+  {recentFiles.map((file, index) => (
+    <ListItem
+      key={index}
+      sx={{
+        '&:hover': { backgroundColor: '#f5f5f5' },
+        borderRadius: 2
+      }}
+    >
+      <InsertDriveFile sx={{ color: '#757575', mr: 2 }} />
+      <ListItemText
+        primary={file.name}
+        secondary={`路径: ${file.fullPath} | 修改时间: ${new Date(file.modified).toLocaleString()}`}
+      />
+      <IconButton onClick={() => handleDownload(file.fullPath)}>
+        <Download />
+      </IconButton>
+    </ListItem>
+  ))}
+  {recentFiles.length === 0 && (
+    <ListItem>
+      <ListItemText primary="暂无最近文件" />
+    </ListItem>
+  )}
+</List>
             </CardContent>
           </Card>
         </Container>
