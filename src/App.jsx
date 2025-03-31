@@ -63,7 +63,7 @@ const cookies = Object.fromEntries(
 
 
 
-// 文件页面组件
+//文件页面喵呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜
 function FilePage() {
 
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -151,26 +151,34 @@ function FilePage() {
   };
   
   
-
   const handleDownload = async (fileName) => {
     try {
-      const relativePath = currentPath.slice(1).join('/');
-      const downloadUrl = `http://127.0.0.1:11810/file/download?path=${encodeURIComponent(relativePath)}&file=${encodeURIComponent(fileName)}&token=${cookies.loginToken}`;
-  
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = downloadUrl;
-      document.body.appendChild(iframe);
-      
-      setContextMenu(null);
+        const token = cookies.loginToken;
 
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 5000);
-  
+        const downloadUrl = `http://127.0.0.1:11810/file/download?${new URLSearchParams({
+            path: currentPath.slice(1).join('/'),
+            file: fileName
+        })}`;
+
+        const response = await fetch(downloadUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': `${token}` //AUV我就不信了这样还能被生成直链
+            }
+        });
+
+        const blob = await response.blob();
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = fileName;
+        downloadLink.click();
+        URL.revokeObjectURL(downloadLink.href);
+
     } catch (err) {
+        console.error('介个错误不好吃，还给你', err);
     }
-  };
+};
+
 
   const sortedFiles = [...files].sort((a, b) => {
     if (sortConfig.key === 'name') {
@@ -287,7 +295,7 @@ function FilePage() {
 
       setNewFolderOpen(false);
       setFolderName('');
-      fetchFiles(); // 刷新列表
+      fetchFiles(); //刷新www
     } catch (err) {
       setError(err.message);
     }
@@ -323,7 +331,6 @@ function FilePage() {
     setCurrentPath(currentPath.slice(0, index + 1));
   };
 
-  // 处理文件夹点击进入子目录
   const handleFolderClick = (folderName) => {
     setCurrentPath([...currentPath, folderName]);
   };
@@ -605,27 +612,36 @@ function App() {
 
   const handleDownload = async (fullPath) => {
     try {
-      const cookies = Object.fromEntries(document.cookie.split("; ").map((c) => c.split("=")));
-      const [path, file] = fullPath.split('/').reduce((acc, cur, index, arr) => {
-        if (index === arr.length - 1) acc[1] = cur;
-        else acc[0] = acc[0] ? `${acc[0]}/${cur}` : cur;
-        return acc;
-      }, ['', '']);
-  
-      const downloadUrl = `http://127.0.0.1:11810/file/download?path=${encodeURIComponent(path)}&file=${encodeURIComponent(file)}&token=${cookies.loginToken}`;
-  
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = downloadUrl;
-      document.body.appendChild(iframe);
-      
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 5000);
+        const cookies = Object.fromEntries(document.cookie.split("; ").map((c) => c.split("=")));
+        const token = cookies.loginToken;
+
+        const splitIndex = fullPath.lastIndexOf('/');
+        const path = fullPath.slice(0, splitIndex);
+        const file = fullPath.slice(splitIndex + 1);
+
+        const downloadUrl = `http://127.0.0.1:11810/file/download?${new URLSearchParams({
+            path: encodeURIComponent(path),
+            file: encodeURIComponent(file)
+        })}`;
+
+        const response = await fetch(downloadUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': `${token}` //AUV我就不信了这样还能被生成直链
+            }
+        });
+
+        const blob = await response.blob();
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = file;
+        downloadLink.click();
+        URL.revokeObjectURL(downloadLink.href);
+
     } catch (err) {
-      console.error('下载失败:', err);
+        console.error('介个错误不好吃，还给你', err);
     }
-  };
+};
 
 const fetchRecentFiles = async () => {
   try {
@@ -669,9 +685,19 @@ const fetchRecentFiles = async () => {
     if (!cookies.loginToken) {
       window.location.href = '/login';
     } else {
-      setIsAuthenticated(true);
-      fetchStorageInfo();
-      fetchRecentFiles();
+      const checkToken = async () => { //大坏蛋js不让effect塞异步呜呜呜
+      const response = await fetch(`http://127.0.0.1:11810/user/checkToken?token=` + cookies.loginToken);
+      const data = await response.json();
+
+      if (data.message === 'Successful') { //检查登录状态喵
+        setIsAuthenticated(true);
+        fetchStorageInfo();
+        fetchRecentFiles();
+      } else {
+        window.location.href = '/login';
+      }
+      };
+      checkToken();
     }
 
   }, [navigate]);

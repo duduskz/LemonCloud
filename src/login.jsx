@@ -161,7 +161,7 @@ function Login() {
     try {
 
 
-      const response = await fetch(`http://127.0.0.1:11810/login?username=${username}&password=${sha256(password)}`);
+      const response = await fetch(`http://127.0.0.1:11810/user/login?username=${username}&password=${sha256(password)}`);
       const data = await response.json();
       if (data.message === 'Invalid user') {
         setError('用户名或密码错误');

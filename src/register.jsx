@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button, TextField, Box, Checkbox, FormControlLabel, Grid, Paper, Typography, Snackbar } from '@mui/material';
 import { Alert } from '@mui/material';
 import './login.css';
-import login from "./login.jsx"; // 引入自定义的 CSS 文件
 
 function Register() {
   const [username, setUsername] = useState('');
@@ -10,8 +9,8 @@ function Register() {
   const [mail, setMail] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [error, setError] = useState('');
-  const [isPaperVisible, setIsPaperVisible] = useState(false); // 控制 Paper 组件的显示
-  const [isPaperFadingOut, setIsPaperFadingOut] = useState(false); // 控制 Paper 组件的淡出动画
+  const [isPaperVisible, setIsPaperVisible] = useState(false);
+  const [isPaperFadingOut, setIsPaperFadingOut] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleCheckboxChange = (event) => {
@@ -21,7 +20,6 @@ function Register() {
   
 
   useEffect(() => {
-    // 页面加载时触发淡入动画
     setIsPaperVisible(true);
   }, []);
 
@@ -170,7 +168,7 @@ function Register() {
       return;
     }
     try {
-      const response = await fetch(`http://127.0.0.1:11810/register?mail=${mail}&username=${username}&password=${sha256(password)}`);
+      const response = await fetch(`http://127.0.0.1:11810/user/register?mail=${mail}&username=${username}&password=${sha256(password)}`);
       const data = await response.json();
       if (data.message === 'Already exists') {
         setError('该邮箱已被注册');
