@@ -1,0 +1,30 @@
+:root {
+    color: rgb(31, 31, 31);
+    background-color: rgb(240, 244, 249);
+}
+
+.fade-in {
+    animation: fadeInAnimation 1s ease-in forwards;
+}
+
+.fade-out {
+    animation: fadeOutAnimation 1s ease-out forwards;
+}
+
+@keyframes fadeInAnimation {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOutAnimation {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
