@@ -10,17 +10,19 @@ import {
 
 } from "@mui/material";
 
+import ProfilePage from './ProfilePage.jsx'
 import SharePage from './SharePage.jsx'
 import FilePage from './FilePage.jsx'
 import MainPage from './MainPage.jsx'
 
-import { Link, useLocation, Routes, Route, Outlet } from "react-router-dom";
+import { Link, useNavigate, useLocation, Routes, Route, Outlet } from "react-router-dom";
 
 function App() {
   return (
     <Routes>
       <Route element={<AppBarLayout />}>
         <Route path="/" element={<MainPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/files" element={<FilePage />} />
       </Route>
 
@@ -31,6 +33,7 @@ function App() {
 
 function AppBarLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   return (
 
@@ -71,7 +74,8 @@ function AppBarLayout() {
                 文件
               </Button>
 
-              <Avatar sx={{ bgcolor: '#2196f3', cursor: 'pointer', '&:hover': { transform: 'scale(1.1)' } }}></Avatar>
+
+              <Avatar onClick={() => navigate("./profile")} sx={{ bgcolor: '#2196f3', cursor: 'pointer', '&:hover': { transform: 'scale(1.1)' } }}></Avatar>
             </Box>
           </Toolbar>
         </Container>

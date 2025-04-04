@@ -17,6 +17,7 @@ import Alert from '@mui/material/Alert';
 function Share() {
   const { uuid } = useParams();
   const [shareRecord, setShareRecord] = useState(null);
+  const [creator, setCreator] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -59,7 +60,6 @@ function Share() {
         );
         
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || '获取分享信息失败');
 
         if (data.message) {
           setError(data.message);
@@ -67,6 +67,12 @@ function Share() {
           const filePathParts = data.filePath.split('/');
           data.fileName = filePathParts[filePathParts.length - 1];
           setShareRecord(data);
+
+          const response = await fetch(
+            `http://127.0.0.1:11810/user/userInfoU/${data.creator}`,
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+          setCreator((await response.json()).username);
         }
       } catch (err) {
         setError(err.message);
@@ -81,7 +87,7 @@ function Share() {
   const formatExpireTime = (timestamp) => {
     if (!timestamp) return '永久有效';
     const date = new Date(timestamp);
-    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}`;
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
   };
 
   if (loading) {
@@ -119,10 +125,10 @@ function Share() {
             
             <Grid item sx={{ flexGrow: 1 }}>
               <Typography variant="h6" fontWeight={600} gutterBottom>
-                {shareRecord.fileName}
+                {shareRecord.isDirectory ? `${shareRecord.fileName}.zip` : shareRecord.fileName}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {`分享者: ${shareRecord.username} 过期时间: ${formatExpireTime(shareRecord.expire)}`}
+                {`分享者: ${creator} 过期时间: ${formatExpireTime(shareRecord.expire)}`}
               </Typography>
             </Grid>
           </Grid>
