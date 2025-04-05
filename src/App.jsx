@@ -15,9 +15,16 @@ import SharePage from './SharePage.jsx'
 import FilePage from './FilePage.jsx'
 import MainPage from './MainPage.jsx'
 
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation, Routes, Route, Outlet } from "react-router-dom";
 
+const cookies = Object.fromEntries(
+  document.cookie.split("; ").map((c) => c.split("="))
+);
+
 function App() {
+
+
   return (
     <Routes>
       <Route element={<AppBarLayout />}>
@@ -32,8 +39,24 @@ function App() {
 }
 
 function AppBarLayout() {
+  const [avatarUrl, setAvatarUrl] = useState('/path/to/avatar.jpg');
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const response = await fetch(
+        `http://127.0.0.1:11810/user/userInfo/${cookies.loginToken}`
+      );
+
+      const data = await response.json();
+      setAvatarUrl(`http://127.0.0.1:11810/user/avatar/${data.avatarId}`);
+    };
+
+    fetchUserInfo();
+
+
+  }, [navigate]);
 
   return (
 
@@ -75,7 +98,7 @@ function AppBarLayout() {
               </Button>
 
 
-              <Avatar onClick={() => navigate("./profile")} sx={{ bgcolor: '#2196f3', cursor: 'pointer', '&:hover': { transform: 'scale(1.1)' } }}></Avatar>
+              <Avatar onClick={() => navigate("./profile")} src={avatarUrl} sx={{ bgcolor: '#2196f3', cursor: 'pointer', '&:hover': { transform: 'scale(1.1)' } }}></Avatar>
             </Box>
           </Toolbar>
         </Container>

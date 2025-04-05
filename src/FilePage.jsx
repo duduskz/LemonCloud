@@ -62,6 +62,7 @@ function FilePage() {
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [folderName, setFolderName] = useState('');
   const [contextMenu, setContextMenu] = useState(null);
+  const [isLongPress, setIsLongPress] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
   const [currentPath, setCurrentPath] = useState(['我的网盘']);
   const [files, setFiles] = useState([
@@ -69,6 +70,7 @@ function FilePage() {
     { name: '本喵的女装照.png', type: 'file', size: '29.3MB', modified: '2025-03-29' },
     { name: '好康的.pptx', type: 'file', size: '5MB', modified: '2025-03-28' }
   ]);
+  const [longPressTimer, setLongPressTimer] = useState(null);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [newFileName, setNewFileName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -190,6 +192,15 @@ function FilePage() {
   useEffect(() => {
     fetchFiles();
   }, [currentPath]);
+
+  const handleLongPress = (event, file) => {
+    const touch = event.touches[0];
+    handleContextMenu({
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      preventDefault: () => {}
+    }, file);
+  };
 
   const handleContextMenu = (event, file) => {
     event.preventDefault();
@@ -556,11 +567,31 @@ function FilePage() {
               <TableRow
                 key={file.name}
                 hover
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  const timer = setTimeout(() => {
+                    handleLongPress(e, file);
+                  }, 500);
+                  setLongPressTimer(timer);
+                  setIsLongPress(true);
+                }}
+                onTouchEnd={(e) => {
+                  clearTimeout(longPressTimer);
+                  setIsLongPress(false);
+                }}
                 onContextMenu={(event) => {
                   event.preventDefault();
                   handleContextMenu(event, file);
                 }}
-                onClick={() => file.type === 'dir' && handleFolderClick(file.name)}
+                onClick={(e) => {
+                  if (isLongPress) return;
+                  
+                  if (file.type === 'dir') {
+                    handleFolderClick(file.name);
+                  } else {
+                    handleDownload(file.name);
+                  }
+                }}
                 sx={{ cursor: file.type === 'dir' ? 'pointer' : 'default' }}
               >
                 <TableCell>

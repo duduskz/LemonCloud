@@ -18,6 +18,7 @@ function Share() {
   const { uuid } = useParams();
   const [shareRecord, setShareRecord] = useState(null);
   const [creator, setCreator] = useState("");
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
