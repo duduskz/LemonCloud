@@ -55,8 +55,7 @@ function Share() {
     const fetchShareInfo = async () => {
       try {
         const response = await fetch(
-          `http://127.0.0.1:11810/file/share/${uuid}`,
-          { headers: { 'Content-Type': 'application/json' } }
+          `http://127.0.0.1:11810/file/share/${uuid}`
         );
         
         const data = await response.json();
@@ -69,8 +68,7 @@ function Share() {
           setShareRecord(data);
 
           const response = await fetch(
-            `http://127.0.0.1:11810/user/userInfoU/${data.creator}`,
-            { headers: { 'Content-Type': 'application/json' } }
+            `http://127.0.0.1:11810/user/userInfoU/${data.creator}`
         );
           setCreator((await response.json()).username);
         }
