@@ -592,7 +592,7 @@ function FilePage() {
                     handleDownload(file.name);
                   }
                 }}
-                sx={{ cursor: file.type === 'dir' ? 'pointer' : 'default' }}
+                sx={{ cursor: 'pointer' }}
               >
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
